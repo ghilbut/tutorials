@@ -11,3 +11,13 @@
 *.lai
 *.la
 *.a
+
+# Microsoft Visual Studio
+*.suo
+*.sdf
+*.opensdf
+*.user
+*.filters
+ipch
+Debug
+Release

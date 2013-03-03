@@ -1,0 +1,65 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "third_party", "third_party", "{151B88CD-CD0F-4146-985E-89751483F9FE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "proxy_device", "proxy_device.vcxproj", "{4C2F78EC-A90B-410C-965C-74C4AFBCDA6F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{568611D3-AFA7-4294-99C1-E9AED0D8057E} = {568611D3-AFA7-4294-99C1-E9AED0D8057E}
+		{12AFF2E5-6D95-4809-9728-9551677C078A} = {12AFF2E5-6D95-4809-9728-9551677C078A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "device", "device.vcxproj", "{9101166B-C345-4153-BC58-18945E951A7A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{568611D3-AFA7-4294-99C1-E9AED0D8057E} = {568611D3-AFA7-4294-99C1-E9AED0D8057E}
+		{12AFF2E5-6D95-4809-9728-9551677C078A} = {12AFF2E5-6D95-4809-9728-9551677C078A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Neptune", "..\..\..\third_party\PlatinumKit-1-0-3-0_a71192_66de97\Neptune\Build\Targets\x86-microsoft-win32-vs2010\Neptune\Neptune.vcxproj", "{12AFF2E5-6D95-4809-9728-9551677C078A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Platinum", "..\..\..\third_party\PlatinumKit-1-0-3-0_a71192_66de97\Platinum\Build\Targets\x86-microsoft-win32-vs2010\Platinum\Platinum.vcxproj", "{568611D3-AFA7-4294-99C1-E9AED0D8057E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{12AFF2E5-6D95-4809-9728-9551677C078A} = {12AFF2E5-6D95-4809-9728-9551677C078A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ctrl_point", "ctrl_point.vcxproj", "{27FD7984-02A8-45EC-B283-CF6B8E451184}"
+	ProjectSection(ProjectDependencies) = postProject
+		{568611D3-AFA7-4294-99C1-E9AED0D8057E} = {568611D3-AFA7-4294-99C1-E9AED0D8057E}
+		{12AFF2E5-6D95-4809-9728-9551677C078A} = {12AFF2E5-6D95-4809-9728-9551677C078A}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4C2F78EC-A90B-410C-965C-74C4AFBCDA6F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4C2F78EC-A90B-410C-965C-74C4AFBCDA6F}.Debug|Win32.Build.0 = Debug|Win32
+		{4C2F78EC-A90B-410C-965C-74C4AFBCDA6F}.Release|Win32.ActiveCfg = Release|Win32
+		{4C2F78EC-A90B-410C-965C-74C4AFBCDA6F}.Release|Win32.Build.0 = Release|Win32
+		{9101166B-C345-4153-BC58-18945E951A7A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9101166B-C345-4153-BC58-18945E951A7A}.Debug|Win32.Build.0 = Debug|Win32
+		{9101166B-C345-4153-BC58-18945E951A7A}.Release|Win32.ActiveCfg = Release|Win32
+		{9101166B-C345-4153-BC58-18945E951A7A}.Release|Win32.Build.0 = Release|Win32
+		{12AFF2E5-6D95-4809-9728-9551677C078A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{12AFF2E5-6D95-4809-9728-9551677C078A}.Debug|Win32.Build.0 = Debug|Win32
+		{12AFF2E5-6D95-4809-9728-9551677C078A}.Release|Win32.ActiveCfg = Release|Win32
+		{12AFF2E5-6D95-4809-9728-9551677C078A}.Release|Win32.Build.0 = Release|Win32
+		{568611D3-AFA7-4294-99C1-E9AED0D8057E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{568611D3-AFA7-4294-99C1-E9AED0D8057E}.Debug|Win32.Build.0 = Debug|Win32
+		{568611D3-AFA7-4294-99C1-E9AED0D8057E}.Release|Win32.ActiveCfg = Release|Win32
+		{568611D3-AFA7-4294-99C1-E9AED0D8057E}.Release|Win32.Build.0 = Release|Win32
+		{27FD7984-02A8-45EC-B283-CF6B8E451184}.Debug|Win32.ActiveCfg = Debug|Win32
+		{27FD7984-02A8-45EC-B283-CF6B8E451184}.Debug|Win32.Build.0 = Debug|Win32
+		{27FD7984-02A8-45EC-B283-CF6B8E451184}.Release|Win32.ActiveCfg = Release|Win32
+		{27FD7984-02A8-45EC-B283-CF6B8E451184}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{12AFF2E5-6D95-4809-9728-9551677C078A} = {151B88CD-CD0F-4146-985E-89751483F9FE}
+		{568611D3-AFA7-4294-99C1-E9AED0D8057E} = {151B88CD-CD0F-4146-985E-89751483F9FE}
+	EndGlobalSection
+EndGlobal
