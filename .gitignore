@@ -17,7 +17,6 @@
 *.sdf
 *.opensdf
 *.user
-*.filters
 ipch
 Debug
 Release
