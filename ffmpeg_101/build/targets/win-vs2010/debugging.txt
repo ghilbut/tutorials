@@ -1,0 +1,7 @@
+Project > Properties > Configuration Properties > Debugging
+
+- Command Arguments
+"C:\Users\Public\Videos\Sample Videos\wildlife.wmv" "$(SolutionDir)$(Platform)\$(Configuration)"
+
+- Environment
+PATH=%PATH%;$(SolutionDir)$(Platform)
