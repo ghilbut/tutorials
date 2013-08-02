@@ -1,0 +1,27 @@
+To compile and install SDL player tutorials:
+
+    1. Install ffmpeg / SDL-1.2.15
+
+       If you install latest ffmpeg library on Ubuntu desktop, you need to
+       check "~/ffmpeg_build". In latest ffmpeg, build output(lib, *.h) exist
+       in "~/ffmpeg_build"
+
+       hsjung@hsjung-Z350-GFLUL:~/utils$ tree -L 1 ~/ffmpeg_build
+       /home/hsjung/ffmpeg_build
+       ├── bin
+       ├── include
+       ├── lib
+       └── share
+
+    2. Build output of SDL-1.2.15 move to ffmpeg_build as above.
+
+    3. Run "./prepare.sh"
+
+       make symbolic link for dependent library / header
+
+    4. Run "cd make; make; cd ../out; export LD_LIBRARY_PATH=${HOME}/ffmpeg_build/lib"
+
+    5. Run "./tutorial03_unittest ../samples/\[10\]_avi_Divx_5_MP3.avi"
+
+Thanks
+Heesuk Jung <hsjung1305@gmail.com>
