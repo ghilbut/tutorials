@@ -20,3 +20,9 @@
 ipch
 Debug
 Release
+
+# Apple Mac OS X Xcode
+.DS_Store
+xcuserdata
+*.xcuderdatad
+*.xcworkspace
