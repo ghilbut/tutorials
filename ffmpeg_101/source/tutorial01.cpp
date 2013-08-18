@@ -1,115 +1,10 @@
-#include <stdio.h>
+#include <cstdio>
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 }
 
-
-AVFrame* GetImageFrame(const AVCodecContext* decode_ctx, AVFrame* frame);
-bool Encode(const AVCodecContext* decode_ctx, AVFrame* frame, AVPacket& out);
-
-
-int main(int argc, char** argv)
-{
-	if (argc < 3) {
-		printf("not enough arguements.\n");
-		return -1;
-	}
-
-	av_register_all();
-
-    // open file
-	AVFormatContext* format_ctx = 0;
-	const char* filepath = argv[1];
-	if (avformat_open_input(&format_ctx, filepath, 0, 0) != 0) {
-		printf("Couldn't open file. : %s\n", filepath);
-		return -1;
-	}
-
-	if (avformat_find_stream_info(format_ctx, 0) < 0) {
-		printf("Couldn't find stream infomation.\n");
-		avformat_close_input(&format_ctx);
-		return -1;
-	}
-
-	av_dump_format(format_ctx, 0, filepath, 0);
-
-    // find video stream index
-	int video_stream = -1;
-	for (unsigned int i = 0 ; i < format_ctx->nb_streams ; ++i) {
-		if (format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-			video_stream = i;
-			break;
-		}
-	}
-
-	if (video_stream == -1) {
-		printf("Couldn't find video stream\n");
-		avformat_close_input(&format_ctx);
-		return -1;
-	}
-
-    // open decode context
-	AVCodecContext* decode_ctx = format_ctx->streams[video_stream]->codec;
-	AVCodec* decoder = avcodec_find_decoder(decode_ctx->codec_id);
-	if (decoder == 0) {
-		printf("Unsupported codec!\n");
-		avformat_close_input(&format_ctx);
-		return -1;
-	}
-
-	if (avcodec_open2(decode_ctx, decoder, 0) < 0) {
-		printf("Couldn't open codec.\n");
-		avformat_close_input(&format_ctx);
-		return -1;
-	}
-
-    // frame ready
-	AVFrame* frame = avcodec_alloc_frame();
-	if (frame == 0) {
-		printf("Couldn't allocate frame.\n");
-        avcodec_close(decode_ctx);
-		avformat_close_input(&format_ctx);
-		return -1;
-	}
-
-	AVPacket packet;
-    // write imgae file from read frame
-	for (int count = 0; count < 5 && av_read_frame(format_ctx, &packet) == 0; ) {
-		if (packet.stream_index == video_stream) {
-			int got_picture = 0;
-			if (avcodec_decode_video2(decode_ctx, frame, &got_picture, &packet) >= 0 && got_picture != 0) {
-				if (count++ < 5) {
-
-					char outpath[260];
-					static const char* outdir = argv[2];
-					sprintf(outpath, "%s\\out%d.png", outdir, count);
-					printf("convert and save file: %s\n", outpath);
-
-					AVPacket out;
-					av_init_packet(&out);
-                    AVFrame* img_frame = GetImageFrame(decode_ctx, frame);
-	                if (img_frame != 0) {
-		                if (Encode(decode_ctx, img_frame, out)) {
-						    FILE* f = fopen(outpath, "wb");
-						    fwrite(out.data, 1, out.size, f);
-						    fclose(f);
-						    av_free_packet(&out);
-					    }
-	                }
-				}
-			}
-		}
-		av_free_packet(&packet);
-	}
-
-	avcodec_free_frame(&frame);
-	avcodec_close(decode_ctx);
-	avformat_close_input(&format_ctx);
-
-	return 0;
-}
 
 
 static const AVPixelFormat kPixFmt = AV_PIX_FMT_RGBA;
@@ -195,4 +90,107 @@ bool Encode(const AVCodecContext* decode_ctx, AVFrame* frame, AVPacket& out)
 	av_free(encode_ctx);
 
 	return retVal;
+}
+
+
+
+int main(int argc, char** argv)
+{
+	if (argc < 3) {
+		printf("[Tutorial] Not enough arguements.\n");
+		return -1;
+	}
+
+	av_register_all();
+
+    // open file
+	AVFormatContext* format_ctx = 0;
+	const char* filepath = argv[1];
+	if (avformat_open_input(&format_ctx, filepath, 0, 0) != 0) {
+		printf("[Tutorial] Couldn't open file. : %s\n", filepath);
+		return -1;
+	}
+
+	if (avformat_find_stream_info(format_ctx, 0) < 0) {
+		printf("[Tutorial] Couldn't find stream infomation.\n");
+		avformat_close_input(&format_ctx);
+		return -1;
+	}
+
+	av_dump_format(format_ctx, 0, filepath, 0);
+
+    // find video stream index
+	int video_stream = -1;
+	for (unsigned int i = 0 ; i < format_ctx->nb_streams ; ++i) {
+		if (format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+			video_stream = i;
+			break;
+		}
+	}
+
+	if (video_stream == -1) {
+		printf("[Tutorial] Couldn't find video stream\n");
+		avformat_close_input(&format_ctx);
+		return -1;
+	}
+
+    // open decode context
+	AVCodecContext* decode_ctx = format_ctx->streams[video_stream]->codec;
+	AVCodec* decoder = avcodec_find_decoder(decode_ctx->codec_id);
+	if (decoder == 0) {
+		printf("[Tutorial] Unsupported codec!\n");
+		avformat_close_input(&format_ctx);
+		return -1;
+	}
+
+	if (avcodec_open2(decode_ctx, decoder, 0) < 0) {
+		printf("[Tutorial] Couldn't open codec.\n");
+		avformat_close_input(&format_ctx);
+		return -1;
+	}
+
+    // frame ready
+	AVFrame* frame = avcodec_alloc_frame();
+	if (frame == 0) {
+		printf("[Tutorial] Couldn't allocate frame.\n");
+        avcodec_close(decode_ctx);
+		avformat_close_input(&format_ctx);
+		return -1;
+	}
+
+	AVPacket packet;
+    // write imgae file from read frame
+	for (int count = 0; count < 5 && av_read_frame(format_ctx, &packet) == 0; ) {
+		if (packet.stream_index == video_stream) {
+			int got_picture = 0;
+			if (avcodec_decode_video2(decode_ctx, frame, &got_picture, &packet) >= 0 && got_picture != 0) {
+				if (count++ < 5) {
+
+					char outpath[260];
+					static const char* outdir = argv[2];
+					sprintf(outpath, "%s\\out%d.png", outdir, count);
+					printf("[Tutorial] Convert and save file: %s\n", outpath);
+
+					AVPacket out;
+					av_init_packet(&out);
+                    AVFrame* img_frame = GetImageFrame(decode_ctx, frame);
+	                if (img_frame != 0) {
+		                if (Encode(decode_ctx, img_frame, out)) {
+						    FILE* f = fopen(outpath, "wb");
+						    fwrite(out.data, 1, out.size, f);
+						    fclose(f);
+						    av_free_packet(&out);
+					    }
+	                }
+				}
+			}
+		}
+		av_free_packet(&packet);
+	}
+
+	avcodec_free_frame(&frame);
+	avcodec_close(decode_ctx);
+	avformat_close_input(&format_ctx);
+
+	return 0;
 }
