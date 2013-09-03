@@ -25,6 +25,7 @@ enum {
 
 
 
+AVFormatContext* format_ctx = 0;
 bool g_quit = false;
 
 
@@ -37,6 +38,7 @@ public:
 
     ~PacketQueue(void) {
         flush();
+        SDL_DestroyMutex(mutex_);
     }
 
     bool empty(void) {
@@ -81,54 +83,18 @@ public:
         SDL_UnlockMutex(mutex_);
     }
 
+    size_t size(void) const {
+        SDL_LockMutex(mutex_);
+        const size_t size = packets_.size();
+        SDL_UnlockMutex(mutex_);
+        return size;
+    }
+
 private:
     std::queue<AVPacket*> packets_;
     SDL_mutex* mutex_;
     SDL_cond* cond_;
 };
-
-
-
-class Surface {
-public:
-    Surface(void)
-        : bmp_(0), width_(0), height_(0), allocated_(false) {
-    }
-    ~Surface(void) {
-        Release();
-    }
-
-    void Alloc(const AVCodecContext* ctx) {
-        SDL_Surface* display = SDL_SetVideoMode(ctx->width, ctx->height, 0, 0);
-        bmp_ = SDL_CreateYUVOverlay(ctx->width, ctx->height, SDL_YV12_OVERLAY, display);
-        width_ = ctx->width;
-        height_ = ctx->height;
-        allocated_ = true;
-    }
-
-    void Release(void) {
-        if (bmp_) {
-            SDL_FreeYUVOverlay(bmp_);
-            allocated_ = false;
-            bmp_ = 0;
-        }
-    }
-
-    SDL_Overlay* bmp(void) const { return bmp_; }
-    int  width(void) const       { return width_; }
-    int  height(void) const      { return height_; }
-    bool IsAllocated(void) const { return allocated_; }
-
-private:
-    SDL_Overlay* bmp_;
-    int width_;
-    int height_;
-    bool allocated_;
-};
-
-
-
-AVFormatContext* format_ctx = 0;
 
 
 
@@ -196,16 +162,16 @@ public:
         audio_q_.push(packet);
     }
 
+    bool IsFull(void) const {
+        return (audio_q_.size() > 30);
+    }
+
 private:
     void DoCallback(Uint8* stream, int len) {
         SDL_LockAudio();
 
         if (len > 0) {
-            while (audio_buffer_.size() < static_cast<size_t>(len)) {
-                if(g_quit) {
-                    return;
-                }
-
+            while (!g_quit && (audio_buffer_.size() < static_cast<size_t>(len))) {
                 if (audio_q_.empty()) {
                     SDL_Event event;
                     event.type = kEventAudioEmpty;
@@ -262,35 +228,114 @@ private:
 
 
 
-static const AVPixelFormat kPixFmt = AV_PIX_FMT_YUV420P;
-
-void Display(const AVCodecContext* decode_ctx, const AVFrame* frame, SDL_Overlay* bmp) {
-    SDL_LockYUVOverlay(bmp);
-
-    AVPicture pic;
-    pic.data[0] = bmp->pixels[0];
-    pic.data[1] = bmp->pixels[2];
-    pic.data[2] = bmp->pixels[1];
-
-    pic.linesize[0] = bmp->pitches[0];
-    pic.linesize[1] = bmp->pitches[2];
-    pic.linesize[2] = bmp->pitches[1];
-
-    const int w = decode_ctx->width;
-    const int h = decode_ctx->height;
-    SwsContext* swsCtx = sws_getContext(w, h, decode_ctx->pix_fmt, w, h, kPixFmt, SWS_FAST_BILINEAR, 0, 0, 0);
-    if (swsCtx == 0) {
-        return;
+class Picture {
+public:
+    Picture(void) 
+        : mutex_(SDL_CreateMutex()) {
+    }
+    ~Picture(void) {
+        SDL_DestroyMutex(mutex_);
     }
 
-    sws_scale(swsCtx, frame->data, frame->linesize, 0, h, pic.data, pic.linesize);
-    sws_freeContext(swsCtx);
+    bool Start(const AVCodecContext* ctx) {
 
-    SDL_UnlockYUVOverlay(bmp);
+        SDL_Surface* display = SDL_SetVideoMode(ctx->width, ctx->height, 0, 0);
+        bmp_ = SDL_CreateYUVOverlay(ctx->width, ctx->height, SDL_YV12_OVERLAY, display);
+        width_ = ctx->width;
+        height_ = ctx->height;
+        pixfmt_ = ctx->pix_fmt;
+        allocated_ = true;
 
-    SDL_Rect rc = {0, 0, w, h};
-    SDL_DisplayYUVOverlay(bmp, &rc);
-}
+        display_tid_ = SDL_CreateThread(display_thread, this);
+        if (display_tid_ == 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    void Stop(void) {
+        display_tid_ = 0;
+
+        if (bmp_) {
+            SDL_FreeYUVOverlay(bmp_);
+            allocated_ = false;
+            bmp_ = 0;
+        }
+    };
+
+    void Insert(AVFrame* frame) {
+        SDL_LockMutex(mutex_);
+        frames_.push(frame);
+        SDL_UnlockMutex(mutex_);
+    }
+
+private:
+    static int SDLCALL display_thread(void* param) {
+        Picture* pThis = static_cast<Picture*>(param);
+        return pThis->DoDisplay();
+    }
+    int DoDisplay(void) {
+        while (!g_quit) {
+            if (frames_.empty()) {
+                SDL_Event event;
+                event.type = kEventVideoEmpty;
+                event.user.data1 = 0;
+                SDL_PushEvent(&event);
+            } else {
+                SDL_LockMutex(mutex_);
+                AVFrame* frame = frames_.front();
+                frames_.pop();
+                SDL_UnlockMutex(mutex_);
+
+                Display(frame);
+                av_free(frame);
+            }
+        }
+        return 0;
+    }
+public:
+    void Display(const AVFrame* frame) {
+        SDL_LockYUVOverlay(bmp_);
+
+        AVPicture pic;
+        pic.data[0] = bmp_->pixels[0];
+        pic.data[1] = bmp_->pixels[2];
+        pic.data[2] = bmp_->pixels[1];
+
+        pic.linesize[0] = bmp_->pitches[0];
+        pic.linesize[1] = bmp_->pitches[2];
+        pic.linesize[2] = bmp_->pitches[1];
+
+        static const AVPixelFormat kPixFmt = AV_PIX_FMT_YUV420P;
+        SwsContext* swsCtx = sws_getContext(width_, height_, pixfmt_, 
+                                            width_, height_, kPixFmt, 
+                                            SWS_FAST_BILINEAR, 0, 0, 0);
+        if (swsCtx == 0) {
+            return;
+        }
+
+        sws_scale(swsCtx, frame->data, frame->linesize, 0, height_, pic.data, pic.linesize);
+        sws_freeContext(swsCtx);
+
+        SDL_UnlockYUVOverlay(bmp_);
+
+        SDL_Rect rc = {0, 0, width_, height_};
+        SDL_DisplayYUVOverlay(bmp_, &rc);
+    }
+
+private:
+    SDL_Thread* display_tid_;
+
+    std::queue<AVFrame*> frames_;
+    SDL_mutex* mutex_;
+
+    SDL_Overlay* bmp_;
+    int width_;
+    int height_;
+    AVPixelFormat pixfmt_;
+    bool allocated_;
+};
 
 
 
@@ -319,6 +364,10 @@ public:
             return false;
         }
 
+        if (!picture_.Start(video_stream_->codec)) {
+            return false;
+        }
+
         video_tid_ = SDL_CreateThread(decode_thread, this);
         if (video_tid_ == 0) {
             avcodec_close(video_stream_->codec);
@@ -334,10 +383,16 @@ public:
             avcodec_close(video_stream_->codec);
             video_stream_ = 0;
         }
+
+        picture_.Stop();
     }
 
     void Push(AVPacket* packet) {
         video_q_.push(packet);
+    }
+
+    bool IsFull(void) const {
+        return (video_q_.size() > 30);
     }
 
 private:
@@ -346,34 +401,24 @@ private:
         return pThis->DoDecode();
     }
     int DoDecode(void) {
-        picture_.Alloc(video_stream_->codec);
-
-        AVFrame* frame = avcodec_alloc_frame();
         while (!g_quit) {
-            AVPacket packet, *p = video_q_.peek();
+            AVPacket *p = video_q_.peek();
             if (p) {
+                AVPacket packet;
                 memcpy(&packet, p, sizeof(packet));
 
                 int got_picture = 0;
+                AVFrame* frame = avcodec_alloc_frame();
                 if (avcodec_decode_video2(video_stream_->codec, frame, &got_picture, &packet) >= 0) {
                     if (got_picture != 0) {
-                        Display(video_stream_->codec, frame, picture_.bmp());
+                        picture_.Insert(frame);
                     }
                 }
 
                 video_q_.pop();
-            } else {
-                SDL_Event event;
-                event.type = kEventVideoEmpty;
-                event.user.data1 = 0;
-                SDL_PushEvent(&event);
-
-                av_init_packet(&packet);
             }
         }
-        av_free(frame);
 
-        picture_.Release();
         return 0;
     }
 
@@ -382,7 +427,7 @@ private:
     PacketQueue video_q_;
     SDL_Thread* video_tid_;
 
-    Surface picture_;
+    Picture picture_;
 };
 
 
@@ -418,6 +463,10 @@ int thread_demux(void *arg) {
     }
 
     while (!g_quit) {
+
+        if (audio_decoder.IsFull() || video_decoder.IsFull()) {
+            SDL_Delay(10);
+        }
 
         AVPacket* packet(new AVPacket());
         if (av_read_frame(format_ctx, packet) < 0) {
@@ -515,13 +564,6 @@ int main(int argc, char** argv) {
     }
 
     while (!g_quit) {
-        if (audio_complete || video_complete) {
-            SDL_Event event;
-            event.type = kEventQuit;
-            event.user.data1 = 0;
-            SDL_PushEvent(&event);
-        }
-
         SDL_Event event;
         SDL_WaitEvent(&event);
         switch (event.type) {
@@ -547,6 +589,13 @@ int main(int argc, char** argv) {
         default:
             //nothing
             break;
+        }
+
+        if (audio_complete || video_complete) {
+            SDL_Event event;
+            event.type = kEventQuit;
+            event.user.data1 = 0;
+            SDL_PushEvent(&event);
         }
     }
 
