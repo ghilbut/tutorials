@@ -1,0 +1,17 @@
+version: "3.9"
+networks:
+  default:
+    name: db
+    driver: bridge
+services:
+  postgres:
+    image: postgres:15.2
+    container_name: postgres
+    environment:
+      - POSTGRES_PASSWORD=tutorialpw
+    ports:
+      - 0.0.0.0:5432:5432
+    restart: always
+    volumes:
+      - .data/postgres:/var/lib/postgresql/data
+---
