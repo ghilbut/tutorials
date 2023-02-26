@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'elasticapm.contrib.django',  ## elastic-apm
+    'app',  ## test example
 ]
 
 MIDDLEWARE = [
@@ -47,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'elasticapm.contrib.django.middleware.Catch404Middleware',  ## elastic-apm
 ]
 
 ROOT_URLCONF = 'tutorial.urls'
@@ -54,7 +57,9 @@ ROOT_URLCONF = 'tutorial.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -62,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'elasticapm.contrib.django.context_processors.rum_tracing',  ## elastic-apm
             ],
         },
     },
@@ -81,6 +87,17 @@ DATABASES = {
         'PASSWORD': 'tutorialpw',
         'HOST': '127.0.0.1',
         'PORT': '5432',
+    }
+}
+
+
+# Cache
+# https://docs.djangoproject.com/en/4.1/ref/settings/#caches
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+        'LOCATION': '127.0.0.1:11211',
     }
 }
 
@@ -120,8 +137,79 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+################################################################
+#
+#  Elastic-APM
+#    * https://www.elastic.co/guide/en/apm/agent/python/6.x/django-support.html
+#
+
+## https://docs.djangoproject.com/en/4.1/topics/logging/
+## https://www.elastic.co/guide/en/apm/agent/python/6.x/django-support.html#django-logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+    },
+    'handlers': {
+        'elasticapm': {
+            'level': 'WARNING',
+            'class': 'elasticapm.contrib.django.handlers.LoggingHandler',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'django': {
+            'level': 'INFO',
+            'handlers': ['console'],
+            'propagate': True,
+        },
+        'django.db.backends': {
+            'level': 'WARNING',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        # Log errors from the Elastic APM module to the console (recommended)
+        'elasticapm.errors': {
+            'level': 'WARNING',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'k8single': {
+            'level': 'DEBUG',
+            'handlers': ['elasticapm'],
+            'propagate': False,
+        },
+    },
+}
+
+## https://www.elastic.co/guide/en/apm/agent/python/6.x/configuration.html
+ELASTIC_APM = {
+    'DEBUG': True,
+    'SERVICE_NAME': 'tutorial-django-server',
+    'SERVER_URL': 'http://localhost:8200',
+    'LOG_LEVEL': 'warning',
+    'SERVICE_NODE_NAME': 'localhost',
+    'ENVIRONMENT': 'ghilbut',  ## production, staging, develop, {{user}}
+    'CLOUD_PROVIDER': 'none',
+    'SERVICE_VERSION': 'v0.1',
+    'TRANSACTION_IGNORE_URLS': ['/healthz', '/static/*', ],
+    'TRANSACTIONS_IGNORE_PATTERNS': ['^OPTIONS '],
+    'DJANGO_TRANSACTION_NAME_FROM_ROUTE': True,
+}
