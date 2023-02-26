@@ -3,11 +3,11 @@ Tutorials
 
 Tutorial projects about open-source libraries.
 
-| Last Updated | Name | Description |
-|------|----------------|---|
-| **2023 FEB** | Elastic-APM | How to use Elastic-APM for Frontend and Backend |
-| **2013 SEP** | FFMpeg 101 | |
-| **2013 AUG** | PlatinumUPnP 101 | |
+| Last Updated | Name                                                             | Description |
+|------|------------------------------------------------------------------|---|
+| **2023 FEB** | Elastic-APM                                                      | How to use Elastic-APM for Frontend and Backend |
+| **2013 SEP** | [FFmpeg](https://ffmpeg.org/) 101                                | |
+| **2013 AUG** | [PlatinumUPnP](https://www.plutinosoft.com/platinum-slider/) 101 | |
 
 # Elastic-APM
 
