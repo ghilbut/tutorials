@@ -1,28 +1,11 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
+##--------------------------------------------------------------
+##  local
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-
-# Microsoft Visual Studio
-*.suo
-*.sdf
-*.opensdf
-*.user
-ipch
-Debug
-Release
-
-# Apple Mac OS X Xcode
+## macos
 .DS_Store
-xcuserdata
-*.xcuderdatad
-*.xcworkspace
+
+## vim
+.*.sw[o|p]
+
+## JetBrains
+.idea
