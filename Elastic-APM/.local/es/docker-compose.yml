@@ -1,0 +1,198 @@
+version: "3.9"
+networks:
+  default:
+    name: elastic
+    driver: bridge
+services:
+  ## https://www.elastic.co/guide/en/elasticsearch/reference/8.6/docker.html
+  setup:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: es-setup
+    volumes:
+      - .data/certs:/usr/share/elasticsearch/config/certs
+    user: "0"
+    command: >
+      bash -c '
+        if [ x${ELASTIC_PASSWORD} == x ]; then
+          echo "Set the ELASTIC_PASSWORD environment variable in the .env file";
+          exit 1;
+        elif [ x${KIBANA_PASSWORD} == x ]; then
+          echo "Set the KIBANA_PASSWORD environment variable in the .env file";
+          exit 1;
+        fi;
+        if [ ! -f certs/ca.zip ]; then
+          echo "Creating CA";
+          bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
+          unzip config/certs/ca.zip -d config/certs;
+        fi;
+        if [ ! -f certs/certs.zip ]; then
+          echo "Creating certs";
+          echo -ne \
+          "instances:\n"\
+          "  - name: es\n"\
+          "    dns:\n"\
+          "      - es\n"\
+          "      - localhost\n"\
+          "    ip:\n"\
+          "      - 127.0.0.1\n"\
+          > config/certs/instances.yml;
+          bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
+          unzip config/certs/certs.zip -d config/certs;
+        fi;
+        echo "Setting file permissions"
+        chown -R root:root config/certs;
+        find . -type d -exec chmod 750 \{\} \;;
+        find . -type f -exec chmod 640 \{\} \;;
+        echo "Waiting for Elasticsearch availability";
+        until curl -s --cacert config/certs/ca/ca.crt https://es:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
+        echo "Setting kibana_system password";
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" https://es:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        echo "All done!";
+      '
+    healthcheck:
+      test: [ "CMD-SHELL", "[ -f config/certs/es/es.crt ]" ]
+      start_period: 10s
+      interval: 1s
+      timeout: 5s
+      retries: 3
+
+  ## https://www.elastic.co/guide/en/elasticsearch/reference/8.6/docker.html
+  es:
+    depends_on:
+      setup:
+        condition: service_healthy
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: es
+    environment:
+      - ELASTIC_PASSWORD
+      - cluster.name=localhost
+      - discovery.type=single-node
+      - node.name=es
+      - logger.level=WARN
+      - xpack.license.self_generated.type=basic
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=certs/es/es.key
+      - xpack.security.http.ssl.certificate=certs/es/es.crt
+      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.key=certs/es/es.key
+      - xpack.security.transport.ssl.certificate=certs/es/es.crt
+      - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.transport.ssl.verification_mode=certificate
+    # ports:
+    #   - 0.0.0.0:9200:9200
+    #   - 0.0.0.0:9300:9300
+    restart: always
+    volumes:
+      - .data/certs:/usr/share/elasticsearch/config/certs
+      - .data/es/data:/usr/share/elasticsearch/data
+      - .data/es/logs:/usr/share/elasticsearch/logs
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  ## [elastic-apm] https://www.elastic.co/guide/en/apm/guide/8.6/running-on-docker.html
+  apm-server:
+    depends_on:
+      es:
+        condition: service_healthy
+    image: docker.elastic.co/apm/apm-server:${STACK_VERSION}
+    container_name: apm-server
+    command:
+      - --strict.perms=false
+      - -e
+      - -E
+      - output.elasticsearch.username=elastic
+      - -E
+      - output.elasticsearch.password=${ELASTIC_PASSWORD}
+      - -E
+      - output.elasticsearch.ssl.certificate_authorities=/etc/apm-server/certs/ca.crt
+      - -E
+      - logging.level=warning
+    environment:
+      - ELASTIC_PASSWORD
+    ports:
+      - 0.0.0.0:8200:8200
+    restart: always
+    user: apm-server
+    volumes:
+      - ./conf/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro
+      - .data/certs/ca:/etc/apm-server/certs:ro
+    # ## ERROR(ghilbut): there is not curl in container
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "curl -s -I http://localhost:8200 | grep -q 'HTTP/1.1 200 OK'",
+    #     ]
+    #   start_period: 10s
+    #   interval: 10s
+    #   timeout: 10s
+    #   retries: 3
+
+  ## https://www.elastic.co/guide/en/kibana/8.6/docker.html
+  kibana:
+    depends_on:
+      es:
+        condition: service_healthy
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=https://es:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+      - LOGGING_ROOT_LEVEL=warn
+      - SERVERNAME=kibana
+    # ports:
+    #   - 0.0.0.0:5601:5601
+    restart: always
+    volumes:
+      - .data/certs:/usr/share/kibana/config/certs
+      - .data/kibana/data:/usr/share/kibana/data
+      - .data/kibana/logs:/usr/share/kibana/logs
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    depends_on:
+      kibana:
+        condition: service_healthy
+    image: nginx:1.23.3
+    container_name: kibana-proxy
+    command:
+      - /bin/bash
+      - -c
+      - "export TOKEN=$(echo -n 'elastic:${ELASTIC_PASSWORD}' | base64) && envsubst '\\$$TOKEN' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+    environment:
+      - ELASTIC_PASSWORD
+    ports:
+      - 0.0.0.0:5601:80
+    restart: always
+    volumes:
+      - ./conf/nginx.conf.template:/etc/nginx/conf.d/default.conf.template:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s -I http://localhost | grep -q 'HTTP/1.1 302 Found'",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
