@@ -150,7 +150,7 @@ ELASTIC_APM = {
 ## 1c. Edit base template for Elastic-APM RUM
 
 * **[[참고] APM Python Agent → Django support](https://www.elastic.co/guide/en/apm/agent/python/6.x/django-support.html#django-integrating-with-the-rum-agent)**
-* **[[참고] APM Real User Monitoring JavaScript Agent → Install the Agent](https://www.elastic.co/guide/en/apm/agent/rum-js/5.x/install-the-agent.html)**
+* **[[참고] APM Real User Monitoring JavaScript Agent → Install the Agent](https://www.elastic.co/guide/en/apm/agent/rum-js/5.x/install-the-agent.html#using-script-tags)**
 
 ### Download and place [elastic-apm-rum.umd.min.js](django/static/elastic-apm-rum.umd.min.js)
 
@@ -268,4 +268,43 @@ declare module '@elastic/apm-rum-react' {
         eventType: string,
     ) => <T>(component: ComponentType<T>) => ComponentType<T>;
 }
+```
+
+# 3. React.js
+
+* **[[참고] APM Real User Monitoring JavaScript Agent → Install the Agent](https://www.elastic.co/guide/en/apm/agent/rum-js/5.x/install-the-agent.html#using-bundlers)**
+* **[[참고] APM Real User Monitoring JavaScript Agent → Configuration](https://www.elastic.co/guide/en/apm/agent/rum-js/current/configuration.html)**
+* **[[참고] APM Real User Monitoring JavaScript Agent → React integration](https://www.elastic.co/guide/en/apm/agent/rum-js/5.x/react-integration.html)**
+
+## 3a. Create react.js application 
+
+```shell
+$ yarn create react-app ${NAME:-tutorial} --template typescript
+$ cd ${NAME:-tutorial}
+$ yarn add react-router-dom
+$ yarn add @elastic/apm-rum
+$ yarn add @elastic/apm-rum-react
+```
+
+## 3b. Set APM configuration
+
+```shell
+## ${PRJDIR}/src/App.tsx
+
+import { init as initApm } from '@elastic/apm-rum'
+
+const apm = initApm({
+  serviceName: 'tutorial-reactjs',
+  serverUrl: 'http://localhost:8200',
+  serviceVersion: 'v0.1',
+  environment: 'ghilbut',
+});
+```
+
+
+
+## 3z. Run react.js application
+
+```shell
+$ yarn start
 ```
