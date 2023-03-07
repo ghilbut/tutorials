@@ -40,36 +40,15 @@ export default function Test() {
         </div>
 
         <div className={styles.grid}>
-          <Link className={styles.description} href="/" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                <span>&lt;-</span> Home
-              </h2>
-              <p className={inter.className}>
-                Go to home page
-              </p>
-            </a>
-          </Link>
-          <Link className={styles.description} href="/test/ssr" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                Test SSR <span>-&gt;</span>
-              </h2>
-              <p className={inter.className}>
-                Go to SSR test page
-              </p>
-            </a>
-          </Link>
-          <Link className={styles.description} href="/about" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                About <span>-&gt;</span>
-              </h2>
-              <p className={inter.className}>
-                Go to about page
-              </p>
-            </a>
-          </Link>
+            <Link href="/">
+              GO TO HOME PAGE
+            </Link>
+            <Link href="/test/ssr">
+              GO TO SSR PAGE
+            </Link>
+            <Link href="/about">
+              GO TO ABOUT PAGE
+            </Link>
         </div>
       </main>
     </>

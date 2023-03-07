@@ -38,35 +38,14 @@ export default function Test({ server, agent }: { server: any, agent: any }) {
         </div>
 
         <div className={styles.grid}>
-          <Link className={styles.description} href="/" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                <span>&lt;-</span> Home
-              </h2>
-              <p className={inter.className}>
-                Go to home page
-              </p>
-            </a>
+          <Link href="/">
+            GO TO HOME PAGE
           </Link>
-          <Link className={styles.description} href="/test/csr" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                <span>&lt;-</span> Test CSR
-              </h2>
-              <p className={inter.className}>
-                Go to SSR test page
-              </p>
-            </a>
+          <Link href="/test/csr">
+            GO TO CSR PAGE
           </Link>
-          <Link className={styles.description} href="/about" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                About <span>-&gt;</span>
-              </h2>
-              <p className={inter.className}>
-                Go to about page
-              </p>
-            </a>
+          <Link href="/about">
+            GO TO ABOUT PAGE
           </Link>
         </div>
       </main>

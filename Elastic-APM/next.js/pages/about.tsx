@@ -22,36 +22,15 @@ export default function About() {
         </div>
 
         <div className={styles.grid}>
-          <Link className={styles.description} href="/" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                <span>&lt;-</span> Home
-              </h2>
-              <p className={inter.className}>
-                Go to home page
-              </p>
-            </a>
-          </Link>
-          <Link className={styles.description} href="/test/csr" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                <span>&lt;-</span> Test CSR
-              </h2>
-              <p className={inter.className}>
-                Go to CSR test page
-              </p>
-            </a>
-          </Link>
-          <Link className={styles.description} href="/test/ssr" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                <span>&lt;-</span> Test SSR
-              </h2>
-              <p className={inter.className}>
-                Go to SSR test page
-              </p>
-            </a>
-          </Link>
+            <Link href="/">
+              GO TO HOME PAGE
+            </Link>
+            <Link href="/test/csr">
+              GO TO CSR PAGE
+            </Link>
+            <Link href="/test/ssr">
+              GO TO SSR PAGE
+            </Link>
         </div>
       </main>
     </>

@@ -62,36 +62,15 @@ export default function Home() {
         </div>
 
         <div className={styles.grid}>
-          <Link className={styles.description} href="/test/csr" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                Test CSR<span>-&gt;</span>
-              </h2>
-              <p className={inter.className}>
-                Go to CSR test page
-              </p>
-            </a>
-          </Link>
-          <Link className={styles.description} href="/test/ssr" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                Test SSR<span>-&gt;</span>
-              </h2>
-              <p className={inter.className}>
-                Go to SSR test page
-              </p>
-            </a>
-          </Link>
-          <Link className={styles.description} href="/about" passHref legacyBehavior>
-            <a className={styles.card} rel="noopener noreferrer">
-              <h2 className={inter.className}>
-                About <span>-&gt;</span>
-              </h2>
-              <p className={inter.className}>
-                Go to about page
-              </p>
-            </a>
-          </Link>
+            <Link href="/test/csr">
+              GO TO CSR PAGE
+            </Link>
+            <Link href="/test/ssr">
+              GO TO SSR PAGE
+            </Link>
+            <Link href="/about">
+              GO TO ABOUT PAGE
+            </Link>
         </div>
 
         <div className={styles.grid}>
