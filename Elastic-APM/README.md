@@ -172,3 +172,100 @@ ELASTIC_APM = {
 ```
 
 ---
+
+# 2. Next.js
+
+## 2a. Create application
+
+```shell
+$ yarn create next-app --typescript ${PROJECT_NAME}
+$ cd ${PROJECT_NAME}
+$ yarn add elastic-apm-node
+$ yarn add @elastic/apm-rum
+$ yarn add @elastic/apm-rum-react
+$ yarn add react-router-dom
+```
+
+## 2b. Activate Elastic-APM for SSR (server side rendering)
+
+* **[[참고] APM Node.js Agent → Get started with Next.js](https://www.elastic.co/guide/en/apm/agent/nodejs/3.x/nextjs.html)**
+
+### [package.json](next.js/package.json#L6)
+
+```json
+{
+  "scripts": {
+    "dev": "NODE_OPTIONS=--require=elastic-apm-node/start-next.js next dev",
+    "build": "next build",
+    "start": "NODE_OPTIONS=--require=elastic-apm-node/start-next.js next start",
+    "lint": "next lint"
+  }
+}
+```
+
+### [elastic-apm-node.js](next.js/elastic-apm-node.js)
+
+* **[[참고] APM Node.js Agent → Configuring the agent](https://www.elastic.co/guide/en/apm/agent/nodejs/3.x/configuring-the-agent.html)**
+* **[[참고] APM Node.js Agent → Configuration options](https://www.elastic.co/guide/en/apm/agent/nodejs/3.x/configuration.html)**
+
+```javascript
+module.exports = {
+  serviceName: 'tutorial-nextjs-ssr',
+  serviceNodeName: 'localhost',
+  serverUrl: 'http://localhost:8200',
+  serviceVersion: 'v0.0.1',
+  environment: 'jhkim'
+}
+```
+
+## 2c. Activate Elastic-APM RUM for CSR (client side rendering)
+
+* **[[참고] APM Real User Monitoring JavaScript Agent → Install the agent](https://www.elastic.co/guide/en/apm/agent/rum-js/5.x/install-the-agent.html#using-bundlers)**
+* **[[참고] APM Real User Monitoring JavaScript Agent → Configuration](https://www.elastic.co/guide/en/apm/agent/rum-js/5.x/configuration.html)**
+
+### [modules/apm.ts](next.js/modules/apm.ts)
+
+```typescript
+import { init as initApm } from '@elastic/apm-rum'
+
+const apm = initApm({
+    serviceName: 'tutorial-nextjs-csr',
+    serviceNodeName: 'jhkim',
+    serverUrl: 'http://localhost:8200',
+    serviceVersion: 'v0.0.1',
+    environment: 'localhost'
+})
+
+export default apm
+```
+
+### [pages/_app.tsx](next.js/_app.tsx#L3)
+
+```typescript
+import apm from '@/modules/apm'
+
+console.log('Elastic-APM is activated: ', apm.isActive())
+```
+
+### [types/elastic__apm-rum-react.d.ts](next.js/types/elastic__apm-rum-react.d.ts) (only for typescript)
+
+```typescript
+// https://github.com/elastic/apm-agent-rum-js/issues/624#issuecomment-598492346
+declare module '@elastic/apm-rum-react' {
+    import { ComponentType } from 'react';
+    import { Route } from 'react-router';
+    export const ApmRoute: typeof Route;
+
+    /**
+     * Wrap a component to record an elastic APM transaction while it is rendered.
+     *
+     * Usage:
+     *  - Pure function: `withTransaction('name','route-change')(Component)`
+     *  - As a decorator: `@withTransaction('name','route-change')`
+     */
+    export const withTransaction: (
+        name: string,
+        eventType: string,
+    ) => <T>(component: ComponentType<T>) => ComponentType<T>;
+}
+```
