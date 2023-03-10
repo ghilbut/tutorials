@@ -1,19 +1,20 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Switch } from 'react-router-dom';
 import { ApmRoute } from '@elastic/apm-rum-react';
-import logo from './logo.svg';
 import './App.css';
 import Home from './pages/home';
+import Test from "./pages/test";
 import About from './pages/about';
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <Routes>
-          <ApmRoute path="/" element={<Home />}></ApmRoute>
-          <Route path="/about" element={<About />}></Route>
-        </Routes>
+        <Switch>
+          <ApmRoute exact path="/" component={Home}></ApmRoute>
+          <ApmRoute exact path="/test" component={Test}></ApmRoute>
+          <ApmRoute exact path="/about" component={About}></ApmRoute>
+        </Switch>
       </BrowserRouter>
     </div>
   );

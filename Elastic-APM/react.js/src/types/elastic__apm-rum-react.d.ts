@@ -1,3 +1,4 @@
+// https://github.com/elastic/apm-agent-rum-js/issues/624#issuecomment-598492346
 declare module '@elastic/apm-rum-react' {
     import { ComponentType } from 'react';
     import { Route } from 'react-router';

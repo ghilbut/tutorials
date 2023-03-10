@@ -272,6 +272,10 @@ declare module '@elastic/apm-rum-react' {
 
 # 3. React.js
 
+> **Warning**  
+> `@elastic/apm-rum-react` does not support `react-router` v6, yet.  
+> if you want use `ApmRoute`, you should use `react-routr` classic version.
+
 * **[[참고] APM Real User Monitoring JavaScript Agent → Install the Agent](https://www.elastic.co/guide/en/apm/agent/rum-js/5.x/install-the-agent.html#using-bundlers)**
 * **[[참고] APM Real User Monitoring JavaScript Agent → Configuration](https://www.elastic.co/guide/en/apm/agent/rum-js/current/configuration.html)**
 * **[[참고] APM Real User Monitoring JavaScript Agent → React integration](https://www.elastic.co/guide/en/apm/agent/rum-js/5.x/react-integration.html)**
@@ -281,7 +285,8 @@ declare module '@elastic/apm-rum-react' {
 ```shell
 $ yarn create react-app ${NAME:-tutorial} --template typescript
 $ cd ${NAME:-tutorial}
-$ yarn add react-router-dom
+$ yarn add react-router-dom@^5.3.4
+$ yarn add @types/react-router-dom@^5.3.3
 $ yarn add @elastic/apm-rum
 $ yarn add @elastic/apm-rum-react
 ```
@@ -299,12 +304,4 @@ const apm = initApm({
   serviceVersion: 'v0.1',
   environment: 'ghilbut',
 });
-```
-
-
-
-## 3z. Run react.js application
-
-```shell
-$ yarn start
 ```

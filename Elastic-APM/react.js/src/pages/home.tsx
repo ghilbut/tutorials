@@ -1,5 +1,6 @@
 import React from 'react';
 import logo from "../logo.svg";
+import {Link} from "react-router-dom";
 
 function Home() {
     return (
@@ -16,6 +17,15 @@ function Home() {
             >
                 Learn React
             </a>
+
+            <div style={{backgroundColor: 'white'}}>
+                <h1>Home</h1>
+                <ul>
+                    <li><Link to="/">Home</Link></li>
+                    <li><Link to="/test">Test</Link></li>
+                    <li><Link to="/about">About</Link></li>
+                </ul>
+            </div>
         </header>
     )
 }

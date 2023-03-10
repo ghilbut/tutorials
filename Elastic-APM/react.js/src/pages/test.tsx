@@ -2,10 +2,10 @@ import React from 'react';
 import logo from "../logo.svg";
 import {Link} from "react-router-dom";
 
-function About() {
+function Test() {
     return (
         <div>
-            <h1>About</h1>
+            <h1>Test</h1>
             <ul>
                 <li><Link to="/">Home</Link></li>
                 <li><Link to="/test">Test</Link></li>
@@ -15,4 +15,4 @@ function About() {
     )
 }
 
-export default About;
+export default Test;
