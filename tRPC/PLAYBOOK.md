@@ -309,3 +309,10 @@ export default trpc.withTRPC(function Home() {
     )
 });
 ```
+
+### B05. subscribe server data
+
+**[NOTE]** [Subscriptions / WebSockets](https://trpc.io/docs/subscriptions)  
+**Next.js 13 does not support websocket server**
+
+**[TODO]** make decision how to support subscription

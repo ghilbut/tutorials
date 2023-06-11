@@ -1,4 +1,5 @@
 import { TRPCError } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import { middleware, procedure, router } from './trpc';
 import { z } from 'zod';
 
@@ -38,6 +39,13 @@ export const appRouter = router({
 
     logout: procedure.mutation(async (opts) => {
         user = null;
+    }),
+
+    onTimer: procedure.subscription(() => {
+        return observable<string>((emit) => {
+            return () => {
+            };
+        });
     }),
 });
 

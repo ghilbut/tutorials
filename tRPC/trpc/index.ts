@@ -1,4 +1,4 @@
-import { httpBatchLink } from '@trpc/client';
+import { httpBatchLink, wsLink, createWSClient } from '@trpc/client';
 import { createTRPCNext } from "@trpc/next";
 import type { AppRouter } from "./router";
 
@@ -52,6 +52,11 @@ const trpc = createTRPCNext<AppRouter>({
                         } = ctx.req.headers;
                         return headers;
                     },
+                }),
+                wsLink<AppRouter>({
+                    client: createWSClient({
+                        url: "ws://localhost:3001",
+                    }),
                 }),
             ],
         };
