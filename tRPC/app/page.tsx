@@ -1,11 +1,34 @@
 'use client';
 
-import Image from 'next/image'
-import trpc from '~/trpc'
+import { useState } from 'react';
+import Image from 'next/image';
+import trpc from '~/trpc';
 
+
+interface User {
+  name: string
+  role: string
+}
 
 export default trpc.withTRPC(function Home() {
   let { data, isLoading, isFetching } = trpc.hello.useQuery();
+
+  const [user, setUser] = useState<User>();
+  const login = trpc.login.useMutation();
+  const logout = trpc.logout.useMutation();
+
+  async function onLogin() {
+    const data = await login.mutateAsync({
+      'username': 'ghilbut',
+      'password': 'ghilbutpw',
+    });
+    setUser(data);
+  }
+
+  async function onLogout() {
+    await logout.mutateAsync();
+    setUser(undefined);
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -46,7 +69,24 @@ export default trpc.withTRPC(function Home() {
       </div>
 
       <div>
-        {isLoading ? 'loading...' : isFetching ? data : <b>{data}</b>}
+        <div>
+          {isLoading ? 'loading...' : isFetching ? data : <b>{data}</b>}
+        </div>
+        <div>
+          {!user &&
+              <ul>
+                <li><button onClick={onLogin} disabled={login.isLoading}>login</button></li>
+                {login.error && <li>Login failed: {login.error.message}</li>}
+              </ul>
+          }
+          {user &&
+              <ul>
+                <li>User: {user.name}</li>
+                <li>Role: {user.role}</li>
+                <li><button onClick={onLogout} disabled={logout.isLoading}>logout</button></li>
+              </ul>
+          }
+        </div>
       </div>
 
       <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">

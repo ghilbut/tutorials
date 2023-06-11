@@ -61,7 +61,7 @@ import { middleware, procedure, router } from './trpc'
 
 
 export const appRouter = router({
-    hello: procedure.query(async ({ctx}) => {
+    hello: procedure.query(async () => {
         await new Promise(r => setTimeout(r, 1000));
         return "Hello, World";
     }),
@@ -175,8 +175,8 @@ export default trpc;
 ```tsx
 'use client';
 
-import Image from 'next/image'
-import trpc from '~/trpc'
+import Image from 'next/image';
+import trpc from '~/trpc';
 
 
 export default trpc.withTRPC(function Home() {
@@ -190,6 +190,122 @@ export default trpc.withTRPC(function Home() {
         </div>
         
         // ...
+    )
+});
+```
+
+### B04. mutate server data
+
+****trpc/router.ts****
+
+```typescript
+import { TRPCError } from '@trpc/server';
+import { middleware, procedure, router } from './trpc';
+import { z } from 'zod';
+
+
+interface User{
+    name: string
+    role: string
+}
+
+let user: User | null = null;
+
+export const appRouter = router({
+    hello: procedure.query(async () => {
+        await new Promise(r => setTimeout(r, 1000));
+        return 'Hello, World';
+    }),
+
+    login: procedure.input(z.object({
+        username: z.string(),
+        password: z.string(),
+    })).mutation(async (opts) => {
+        const { username, password } = opts.input;
+
+        if (username != 'ghilbut' || password != 'ghilbutpw') {
+            throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message: 'invalid username or password',
+            });
+        }
+
+        user = {
+            name: username,
+            role: 'admin',
+        };
+        return user;
+    }),
+
+    logout: procedure.mutation(async (opts) => {
+        user = null;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+***app/page.tsx***
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+// ...
+
+
+interface User {
+    name: string
+    role: string
+}
+
+export default trpc.withTRPC(function Home() {
+    let { data, isLoading, isFetching } = trpc.hello.useQuery();
+
+    const [user, setUser] = useState<User>();
+    const login = trpc.login.useMutation();
+    const logout = trpc.logout.useMutation();
+
+    async function onLogin() {
+        const data = await login.mutateAsync({
+            'username': 'ghilbut',
+            'password': 'ghilbutpw',
+        });
+        setUser(data);
+    }
+
+    async function onLogout() {
+        await logout.mutateAsync();
+        setUser(undefined);
+    }
+    
+    return (
+        <main className="flex min-h-screen flex-col items-center justify-between p-24">
+            // ...
+
+            <div>
+                <div>
+                    {isLoading ? 'loading...' : isFetching ? data : <b>{data}</b>}
+                </div>
+                <div>
+                    {!user &&
+                        <ul>
+                            <li><button onClick={onLogin} disabled={login.isLoading}>login</button></li>
+                            {login.error && <li>Login failed: {login.error.message}</li>}
+                        </ul>
+                    }
+                    {user &&
+                        <ul>
+                            <li>User: {user.name}</li>
+                            <li>Role: {user.role}</li>
+                            <li><button onClick={onLogout} disabled={logout.isLoading}>logout</button></li>
+                        </ul>
+                    }
+                </div>
+            </div>
+            
+            // ...
+        </main>
     )
 });
 ```
