@@ -101,7 +101,7 @@ const handler = (request: Request) => {
 export { handler as GET, handler as POST };
 ```
 
-### B03. fetch for page rendering
+### B03. query for page rendering
 
 ***trcp/index.ts***
 
