@@ -1,16 +1,26 @@
-import fastify from 'fastify'
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import fastify from 'fastify';
+import { appRouter } from './router';
 
 
-const server = fastify()
+const server = fastify({
+    maxParamLength: 4096,
+});
 
 server.get('/healthz', async (request, reply) => {
     return 'OK'
 })
 
-server.listen({ port: 8080 }, (err, address) => {
-    if (err) {
-        console.error(err)
-        process.exit(1)
+server.register(fastifyTRPCPlugin, {
+    prefix: '/trpc',
+    trpcOptions: { router: appRouter },
+});
+
+(async () => {
+    try {
+        await server.listen({ port: 8080 });
+    } catch (err) {
+        server.log.error(err);
+        process.exit(1);
     }
-    console.log(`Server listening at ${address}`)
-})
+})();

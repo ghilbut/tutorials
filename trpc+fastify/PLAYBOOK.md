@@ -114,3 +114,75 @@ $ yarn start
 ```
 
 ---
+
+# B. Apply tRPC protocol
+
+## B01. tRPC query
+
+### fastify server
+
+```shell
+$ cd ${TUTORIAL_ROOT}/fastify
+$ yarn add @trpc/server zod
+```
+
+**fastify/router.ts**
+
+```typescript
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+
+export const t = initTRPC.create();
+
+export const appRouter = t.router({
+  hello: t.procedure.query((opts) => {
+    return 'Hello, World';
+  }),
+});
+
+// export type definition of API
+export type AppRouter = typeof appRouter;
+```
+
+**fastify/index.ts**
+
+```typescript
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import fastify from 'fastify';
+import { appRouter } from './router';
+
+
+const server = fastify({
+    maxParamLength: 4096,
+});
+
+server.get('/healthz', async (request, reply) => {
+    return 'OK'
+})
+
+server.register(fastifyTRPCPlugin, {
+    prefix: '/trpc',
+    trpcOptions: { router: appRouter },
+});
+
+(async () => {
+    try {
+        await server.listen({ port: 8080 });
+    } catch (err) {
+        server.log.error(err);
+        process.exit(1);
+    }
+})();
+```
+
+### next.js client
+
+```shell
+$ cd ${TUTORIAL_ROOT}/next.js
+$ yarn add @trpc/client @trpc/react-query @tanstack/react-query
+```
+
+## B02. tRPC mutation
+
+## B03. tRPC subscription
