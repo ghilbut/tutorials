@@ -4,7 +4,8 @@ import { z } from 'zod';
 export const t = initTRPC.create();
 
 export const appRouter = t.router({
-    hello: t.procedure.query((opts) => {
+    hello: t.procedure.query(async (opts) => {
+        await new Promise(r => setTimeout(r, 1000));
         return 'Hello, World';
     }),
 });

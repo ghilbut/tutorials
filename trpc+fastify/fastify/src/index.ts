@@ -12,7 +12,7 @@ server.get('/healthz', async (request, reply) => {
 })
 
 server.register(fastifyTRPCPlugin, {
-    prefix: '/trpc',
+    prefix: '/api/trpc',
     trpcOptions: { router: appRouter },
 });
 
