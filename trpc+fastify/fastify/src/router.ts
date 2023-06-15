@@ -1,4 +1,5 @@
 import { initTRPC } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 
 
@@ -16,7 +17,24 @@ export const appRouter = t.router({
     }),
     resetName: t.procedure.mutation(async () => {
         name = null;
-    })
+    }),
+    onChanged: t.procedure.subscription(() => {
+        return observable<{ name: string|null }>((emit) => {
+
+            let dirty:string|null = name;
+
+            const timer = setInterval(() => {
+                if (name !== dirty) {
+                    dirty = name;
+                    emit.next({ name });
+                }
+            }, 1000);
+
+            return () => {
+                clearInterval(timer);
+            };
+        });
+    }),
 });
 
 // export type definition of API

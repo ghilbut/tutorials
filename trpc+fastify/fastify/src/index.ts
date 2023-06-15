@@ -1,5 +1,6 @@
 import fastify from 'fastify';
 import cors from '@fastify/cors';
+import ws from '@fastify/websocket';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { appRouter } from './router';
 
@@ -9,9 +10,11 @@ const server = fastify({
 });
 
 server.register(cors);
+server.register(ws);
 server.register(fastifyTRPCPlugin, {
     prefix: '/api/trpc',
     trpcOptions: { router: appRouter },
+    useWSS: true,
 });
 
 server.get('/healthz', async (request, reply) => {

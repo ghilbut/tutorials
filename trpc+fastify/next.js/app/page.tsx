@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import trpc from '~/trpc'
 
@@ -17,6 +18,17 @@ export default trpc.withTRPC(function Home() {
   async function onClickResetName() {
     await resetName.mutate();
   }
+
+  let [ message, setMessage ] = useState<string|null>(null);
+
+  trpc.onChanged.useSubscription(undefined, {
+    onData(data) {
+      setMessage(`name is changed to ${data.name}`);
+    },
+    onError(err) {
+      console.error(err);
+    }
+  });
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -66,6 +78,7 @@ export default trpc.withTRPC(function Home() {
             <li><button onClick={onClickResetName}>Reset Name</button></li>
           </ul>
         </div>
+        {message && <div>{message}</div>}
       </div>
 
       <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">
