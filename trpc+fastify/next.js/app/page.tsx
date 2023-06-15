@@ -7,6 +7,17 @@ import trpc from '~/trpc'
 export default trpc.withTRPC(function Home() {
   let { data, isLoading, isFetching } = trpc.hello.useQuery();
 
+  const setName = trpc.setName.useMutation();
+  const resetName = trpc.resetName.useMutation();
+
+  async function onClickSetName() {
+    await setName.mutate('ghilbut');
+  }
+
+  async function onClickResetName() {
+    await resetName.mutate();
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
@@ -48,6 +59,12 @@ export default trpc.withTRPC(function Home() {
       <div>
         <div>
           {isLoading ? 'loading...' : isFetching ? data : <b>{data}</b>}
+        </div>
+        <div>
+          <ul>
+            <li><button onClick={onClickSetName}>Set Name</button></li>
+            <li><button onClick={onClickResetName}>Reset Name</button></li>
+          </ul>
         </div>
       </div>
 

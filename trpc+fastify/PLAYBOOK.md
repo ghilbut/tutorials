@@ -14,9 +14,10 @@ tRPC + Next.js 13 + Fastify
 
 **[NOTE]** [Fastify / Documentation / Typescript](https://www.fastify.io/docs/latest/Reference/TypeScript/)
 
-### initialize environment
+### Initialize environment
 
 ```shell
+$ cd ${TUTORIAL_ROOT}
 $ mkdir fastify && cd "$_"
 $ yarn init -y
 $ yarn add fastify
@@ -30,7 +31,7 @@ $ yarn tsc --init \
   --esModuleInterop true
 ```
 
-### create `index.ts` file
+### Create `index.ts` file
 
 ```typescript
 import fastify from 'fastify'
@@ -51,7 +52,7 @@ server.listen({ port: 8080 }, (err, address) => {
 })
 ```
 
-### run server
+### Run server
 
 add below block in [pakcage.json](fastify/package.json) file
 
@@ -69,7 +70,7 @@ add below block in [pakcage.json](fastify/package.json) file
 }
 ```
 
-#### run develop mode
+#### run development mode
 
 ```shell
 $ yarn dev
@@ -77,16 +78,17 @@ $ yarn dev
 
 #### run production mode
 
-``shell
+```shell
 $ yarn build
 $ yarn start
-``
+````
 
 ## A02. Create next.js client
 
-### initialize environment
+### Initialize environment
 
 ```shell
+$ cd ${TUTORIAL_ROOT}
 $ mkdir next.js && cd "$_"
 $ yarn create next-app \
        --ts \
@@ -98,9 +100,9 @@ $ yarn create next-app \
        .
 ```
 
-### run server
+### Run server
 
-#### run develop mode
+#### run development mode
 
 ```shell
 $ yarn dev
@@ -119,7 +121,7 @@ $ yarn start
 
 ## B01. tRPC query
 
-### fastify server
+### Fastify server
 
 ```shell
 $ cd ${TUTORIAL_ROOT}/fastify
@@ -130,7 +132,6 @@ $ yarn add @trpc/server zod
 
 ```typescript
 import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
 
 
 export const t = initTRPC.create();
@@ -149,8 +150,9 @@ export type AppRouter = typeof appRouter;
 * **fastify/index.ts**
 
 ```typescript
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import fastify from 'fastify';
+import cors from '@fastify/cors';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { appRouter } from './router';
 
 
@@ -158,18 +160,20 @@ const server = fastify({
     maxParamLength: 4096,
 });
 
+server.register(cors);
+server.register(fastifyTRPCPlugin, {
+  prefix: '/api/trpc',
+  trpcOptions: { router: appRouter },
+});
+
 server.get('/healthz', async (request, reply) => {
     return 'OK'
 })
 
-server.register(fastifyTRPCPlugin, {
-    prefix: '/api/trpc',
-    trpcOptions: { router: appRouter },
-});
-
 (async () => {
     try {
         await server.listen({ port: 8080 });
+        console.log('listening on port', 8080);
     } catch (err) {
         server.log.error(err);
         process.exit(1);
@@ -177,7 +181,7 @@ server.register(fastifyTRPCPlugin, {
 })();
 ```
 
-### next.js client
+### Next.js client
 
 #### add packages
 
@@ -186,83 +190,22 @@ $ cd ${TUTORIAL_ROOT}/next.js
 $ yarn add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query
 ```
 
-#### set proxy to fastify server
-
-* **next.js/next.config.js**
-
-```typescript
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-    async rewrites() {
-        return [
-            {
-                source: "/api/trpc/:path*",
-                destination: "http://localhost:8080/api/trpc/:path*",
-            },
-        ];
-    },
-}
-
-module.exports = nextConfig
-```
+#### create trpc client
 
 * **next.js/trpc/index.ts**
 
 ```typescript
-import { httpBatchLink, wsLink, createWSClient } from '@trpc/client';
+import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from "@trpc/next";
 import type { AppRouter } from "../../fastify/src/router";
 
 
-function getBaseUrl() {
-    if (typeof window !== 'undefined')
-        // browser should use relative path
-        return '';
-    if (process.env.VERCEL_URL)
-        // reference for vercel.com
-        return `https://${process.env.VERCEL_URL}`;
-    if (process.env.RENDER_INTERNAL_HOSTNAME)
-        // reference for render.com
-        return `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
-    // assume localhost
-    return `http://localhost:${process.env.PORT ?? 8080}`;
-}
-
 const trpc = createTRPCNext<AppRouter>({
     config(opts) {
-        const { ctx } = opts;
-        if (typeof window !== 'undefined') {
-            // during client requests
-            return {
-                links: [
-                    httpBatchLink({
-                        url: '/api/trpc',
-                    }),
-                ],
-            };
-        }
         return {
             links: [
                 httpBatchLink({
-                    // The server needs to know your app's full url
-                    url: `${getBaseUrl()}/api/trpc`,
-                    /**
-                     * Set custom request headers on every request from tRPC
-                     * @link https://trpc.io/docs/v10/header
-                     */
-                    headers() {
-                        if (!ctx?.req?.headers) {
-                            return {};
-                        }
-                        // To use SSR properly, you need to forward the client's headers to the server
-                        // This is so you can pass through things like cookies when we're server-side rendering
-                        const {
-                            // If you're using Node 18 before 18.15.0, omit the "connection" header
-                            connection: _connection,
-                            ...headers
-                        } = ctx.req.headers;
-                        return headers;
-                    },
+                    url: `http://localhost:8080/api/trpc`,
                 }),
             ],
         };
@@ -273,7 +216,7 @@ const trpc = createTRPCNext<AppRouter>({
 export default trpc;
 ```
 
-***next.js/app/page.tsx***
+* **next.js/app/page.tsx**
 
 ```tsx
 'use client'
@@ -299,4 +242,80 @@ export default trpc.withTRPC(function Home() {
 
 ## B02. tRPC mutation
 
+### Fastify server
+
+* **src/router.ts**
+
+```typescript
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+
+export const t = initTRPC.create();
+
+let name: string|null = null;
+
+export const appRouter = t.router({
+    hello: t.procedure.query(async (opts) => {
+        await new Promise(r => setTimeout(r, 1000));
+        return `Hello, ${name || 'World'}`;
+    }),
+    setName: t.procedure.input(z.string()).mutation(async ({ input }) => {
+        name = input;
+    }),
+    resetName: t.procedure.mutation(async () => {
+        name = null;
+    })
+});
+
+// export type definition of API
+export type AppRouter = typeof appRouter;
+```
+
+### Next.js client
+
+* **app/page.tsx**
+
+```tsx
+'use client'
+
+import Image from 'next/image'
+import trpc from '~/trpc'
+
+
+export default trpc.withTRPC(function Home() {
+  let { data, isLoading, isFetching } = trpc.hello.useQuery();
+
+  const setName = trpc.setName.useMutation();
+  const resetName = trpc.resetName.useMutation();
+
+  async function onClickSetName() {
+    await setName.mutate('ghilbut');
+  }
+
+  async function onClickResetName() {
+    await resetName.mutate();
+  }
+
+  return (
+          // ...
+
+          <div>
+            {isLoading ? 'loading...' : isFetching ? data : <b>{data}</b>}
+          </div>
+
+          // ...
+  )
+});
+```
+
 ## B03. tRPC subscription
+
+### Fastify server
+
+```shell
+$ yarn add ws @fastify/websocket
+$ yarn add --dev @types/ws
+```
+
+### Next.js client
